@@ -7,7 +7,7 @@ The main addition to the model is the implementation of a constraint that places
 
 C_r,k,c <= s_r,c * sum(C_r,k,c over c)
 
-C_r,k,c is the installed capacity for region r, energy technology k and resource class c.
+C_r,k,c is the installed capacity for region r, energy technology k and resource class c and s_r,c is the chosen allocation.
 
 You use the constraint by running runmodel(historical_allocation = true, allocation_of_wind = [0,0,0,0,0,0,0,5,4,1]).
 The allocation used here means that 10 % of installations end up in the windiest areas, 40 % in the second windiest and 10 % in the third windiest.
