@@ -4,7 +4,9 @@ Below are the instructions for the original Supergrid-model by Niclas Mattsson. 
 The code was run with Julia v.1.3.1 and Gurobi 9.0.0. This was the only combination of Julia and a solver I could get working with the model.
 
 The main addition to the model is the implementation of a constraint that places the installed wind capacity in accordance with a heuristic instead of simply using the best sites:
+
 C_r,k,c <= s_r,c * sum(C_r,k,c over c)
+
 C_r,k,c is the installed capacity for region r, energy technology k and resource class c.
 
 You use the constraint by running runmodel(historical_allocation = true, allocation_of_wind = [0,0,0,0,0,0,0,5,4,1]).
