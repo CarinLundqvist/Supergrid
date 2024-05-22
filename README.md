@@ -5,6 +5,7 @@ The code was run with Julia v.1.3.1 and Gurobi 9.0.0. This was the only combinat
 
 The main addition to the model is the implementation of a constraint that places the installed wind capacity in accordance with a heuristic instead of simply using the best sites:
 C_r,k,c <= s_r,c * sum(C_r,k,c over c)
+C_r,k,c is the installed capacity for region r, energy technology k and resource class c.
 
 You use the constraint by running runmodel(historical_allocation = true, allocation_of_wind = [0,0,0,0,0,0,0,5,4,1]).
 The allocation used here means that 10 % of installations end up in the windiest areas, 40 % in the second windiest and 10 % in the third windiest.
