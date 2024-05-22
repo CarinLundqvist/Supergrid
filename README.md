@@ -1,3 +1,19 @@
+# Changes
+Below are the instructions for the original Supergrid-model by Niclas Mattsson. In this section, I will explain the changes that have been made.
+
+The code was run with Julia v.1.3.1 and Gurobi 9.0.0. This was the only combination of Julia and a solver I could get working with the model.
+
+The main addition to the model is the implementation of a constraint that places the installed wind capacity in accordance with a heuristic instead of simply using the best sites.
+        Bogdanov[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
+            Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
+                windallocation[r,CLASS[:wind][i]]*sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+
+You use the constraint by running runmodel(historical_allocation = true, allocation_of_wind = [0,0,0,0,0,0,0,5,4,1]).
+The allocation used here means that 10 % of installations end up in the windiest areas, 40 % in the second windiest and 10 % in the third windiest.
+
+Besides the allocation, the code has been updated such that it can handle any number of resource classes as inputs, while it previously could only handle five.
+Furthermore, the costs have been updated in accordance with the coming article "Assessing the One Sun One World One Grid plan: Could global smoothing of solar power production be cost-effective?" by Xiaoming Kan, Fredrik Hedenus and Lina Reichenberg.
+
 # Supergrid.jl
 
 A capacity expansion model of the electricity system for arbitrary world regions, written in Julia.
