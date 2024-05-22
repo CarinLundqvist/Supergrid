@@ -154,7 +154,7 @@ function analyzeresults(results::Results)
         if country == :BARS
             existinghydro = vec(sum(Electricity[:hydro,:x0], dims=1))
             regcost = Systemcost ./ (vec(sum(annualelec, dims=1)[1:end-1]) - existinghydro) * 1000
-            totcost = sum(Systemcost) / (sum(annualelec[:,:TOTAL]) - sum(existinghydro)) * 1000
+            totcost = sum(Systemcost) / (sum(annualelec[:,:TOTAL]) - sum(existinghydro)) * 1000 # Maybe do demand instead?
             lcoe = NamedArray(collect([regcost; totcost]'), (["system cost (€/MWh)"], [REGION; :TOTAL]))
             println("Regional system cost per MWh generated (€/MWh):")
             display(round.(lcoe, digits=2))

@@ -220,7 +220,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
 
     return Constraints(ElecCapacity, ElecDemand, RampingDown, RampingUp, StorageBalance, MaxStorageCapacity, InitialStorageLevel,
                 MaxTransmissionCapacity, TwoWayStreet, NoTransmission, NoCharging, ChargingNeedsBattery,
-                Calculate_AnnualGeneration, Calculate_FuelUse, TotalCO2, Totalcosts, Bogdanov) #1, Bogdanov2, Bogdanov3, Bogdanov4)
+                Calculate_AnnualGeneration, Calculate_FuelUse, TotalCO2, Totalcosts, Bogdanov)
 end
 
 function makeobjective(m, sets, vars)

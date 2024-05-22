@@ -216,8 +216,8 @@ function makeparameters(sets, options, hourinfo)
     end
 
     # from Bogdanov & Breyer (2016) "North-East Asian Super Grid..."
-    transmissioncostdata = connected .* (180 .+ 0.612*distances) .+ connectedoffshore .* (180 .+ 0.992*distances)
-    transmissionfixedcostdata = connected .* (1.8 .+ 0.0075*distances) .+ connectedoffshore .* (1.8 .+ 0.0010*distances)
+    transmissioncostdata = connected .* (180 .+ 0.4*distances) .+ connectedoffshore .* (180 .+ 0.47*distances)
+    transmissionfixedcostdata = connected .* (1.8 .+ 0.008*distances) .+ connectedoffshore .* (1.8 .+ 0.00165*distances)
     transmissioninvestcost = AxisArray(transmissioncostdata, REGION, REGION)        # €/kW
     transmissionfixedcost = AxisArray(transmissionfixedcostdata, REGION, REGION)        # €/kW
     transmissionlossdata = (connected .| connectedoffshore) .* (0.014 .+ 0.016*distances/1000)
@@ -235,20 +235,20 @@ function makeparameters(sets, options, hourinfo)
     techtable = [
         #               investcost  variablecost    fixedcost   lifetime    efficiency  rampingrate
         #               €/kW        €/MWh elec      €/kW/year   years                   share of capacity per hour
-        :gasGT          500         1               10          30          0.4         1
+        :gasGT          500         1               10          30          0.35        1
         :gasCCGT        800         1               16          30          0.6         0.3
-        :coal           1600        2               48          30          0.45        0.15
-        :bioGT          500         1               10          30          0.4         1
+        :coal           1600        2               48          40          0.45        0.15
+        :bioGT          500         1               10          30          0.35        1
         :bioCCGT        800         1               16          30          0.6         0.3
-        :nuclear        5000        3               150         50          0.4         0.05
-        :wind           1200        0               43          25          1           1
-        :offwind        2300        0               86          25          1           1
+        :nuclear        5000        3.5             112         40          0.33        0.05
+        :wind           825         0               33          25          1           1
+        :offwind        1500        0               55          25          1           1
         :transmission   NaN         0               NaN         50          NaN         1
-        :battery        150         0.1             1.5         10          0.9         1   # 1h discharge time, 150 €/kW = 150 €/kWh
-        :pv             600         0               16          25          1           1
-        :pvroof         900         0               20          25          1           1
-        :csp            6000        0               35          30          1           1   # for solar multiple=3, storage=12 hours
-        :hydro          10          0               0           80          1           1   # small artificial investcost so it doesn't overinvest in free capacity 
+        :battery        58          0.1             1.5         15          0.9         1   # 1h discharge time, 150 €/kW = 150 €/kWh
+        :pv             323         0               8           25          1           1
+        :pvroof         423         0               5.8         25          1           1
+        :csp            3746        2.9             56          30          1           1   # for solar multiple=3, storage=12 hours
+        :hydro          300         0               25          80          1           1   # small artificial investcost so it doesn't overinvest in free capacity 
     ]
     techs = techtable[:,1]
     techdata = Float64.(techtable[:,2:end])
@@ -272,7 +272,7 @@ function makeparameters(sets, options, hourinfo)
     # 5: nuclear fuel pellets 0.39 USD/kWh = 3.2 €/MWh    (see also Stuff/Nuclear fuel costs.xlsx)
     # 6: biomethane anaerobic digestion 96 €/MWh (2015), 60 €/MWh (2050), thermal gasification 37 €/MWh (2050)
     
-    fuelcost = AxisArray(Float64[0, 11, 22, 37, 3.2], [:_, :coal, :gas, :biogas, :uranium])     # €/MWh fuel
+    fuelcost = AxisArray(Float64[0, 11, 22, 37, 2.6], [:_, :coal, :gas, :biogas, :uranium])     # €/MWh fuel
 
     crf = AxisArray(discountrate ./ (1 .- 1 ./(1+discountrate).^lifetime), techs)
 
