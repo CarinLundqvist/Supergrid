@@ -244,7 +244,7 @@ function makeparameters(sets, options, hourinfo)
         :wind           825         0               33          25          1           1
         :offwind        1500        0               55          25          1           1
         :transmission   NaN         0               NaN         50          NaN         1
-        :battery        58          0.1             1.5         15          0.9         1   # 1h discharge time, 150 €/kW = 150 €/kWh
+        :battery        58          0.1             1.5         15          0.85         1   # 1h discharge time, 150 €/kW = 150 €/kWh
         :pv             323         0               8           25          1           1
         :pvroof         423         0               5.8         25          1           1
         :csp            3746        2.9             56          30          1           1   # for solar multiple=3, storage=12 hours
