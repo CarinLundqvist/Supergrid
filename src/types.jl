@@ -43,17 +43,17 @@ struct Params
 end
 
 struct Vars
-    Systemcost                  ::JuMP.JuMPArray{JuMP.Variable,1}
-    CO2emissions                ::JuMP.JuMPArray{JuMP.Variable,1}
-    FuelUse                     ::JuMP.JuMPArray{JuMP.Variable,2}
-    Electricity                 ::JuMP.JuMPDict{JuMP.Variable,4}
-    AnnualGeneration            ::JuMP.JuMPArray{JuMP.Variable,2}
-    Charging                    ::JuMP.JuMPArray{JuMP.Variable,3}
-    StorageLevel                ::JuMP.JuMPDict{JuMP.Variable,4}
-    Transmission                ::JuMP.JuMPArray{JuMP.Variable,3}
-    TransmissionCapacity        ::JuMP.JuMPArray{JuMP.Variable,2}
-    Capacity                    ::JuMP.JuMPDict{JuMP.Variable,3}
-    SolarCapacity               ::JuMP.JuMPArray{JuMP.Variable,4}
+    Systemcost                  ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    CO2emissions                ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    FuelUse                     ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
+    Electricity                 ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,4}
+    AnnualGeneration            ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
+    Charging                    ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,3}
+    StorageLevel                ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,4}
+    Transmission                ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,3}
+    TransmissionCapacity        ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
+    Capacity                    ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,3}
+    SolarCapacity               ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,4}
 end
 
 # add type info here too
@@ -108,7 +108,7 @@ struct ModelInfo
 end
 
 struct Results
-    Status                      ::Symbol
+    Status                      ::MOI.TerminationStatusCode
     options                     ::Dict{Symbol,Any}
     hourinfo                    ::HourSampling
     sets                        ::Sets
@@ -117,8 +117,8 @@ struct Results
     CO2emissions                ::AxisArray{Float64,1}
     FuelUse                     ::AxisArray{Float64,2}
     Electricity                 ::Dict{Tuple{Symbol,Symbol}, Array{Float64,2}}
-    Charging                        ::AxisArray{Float64,3}
-    StorageLevel                    ::Dict{Tuple{Symbol,Symbol}, Array{Float64,2}}
+    Charging                    ::AxisArray{Float64,3}
+    StorageLevel                ::Dict{Tuple{Symbol,Symbol}, Array{Float64,2}}
     Transmission                ::AxisArray{Float64,3}
     TransmissionCapacity        ::AxisArray{Float64,2}
     Capacity                    ::Dict{Tuple{Symbol,Symbol,Symbol}, Float64}
