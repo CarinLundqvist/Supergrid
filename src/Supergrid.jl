@@ -3,7 +3,7 @@ module Supergrid
 export runmodel, buildmodel, readresults, saveresults, analyzeresults, listresults, loadresults, makesets, makeparameters,
         fix_timezone_error, chart_energymix_scenarios
 
-using JuMP, Gurobi, GLPKMathProgInterface, GLPK, Clp, Parameters, AxisArrays, Plots, JLD2, Statistics
+using JuMP, Gurobi, GLPK, Clp, Parameters, AxisArrays, Plots, JLD2, Statistics
 
 include("helperfunctions.jl")
 include("types.jl")
@@ -101,7 +101,8 @@ function runmodel(; name="", group="", optionlist...)       # carbon tax in €/
         println("\nSolving model...")
     end
 
-    status = solve(model.modelname)
+    optimize!(model.modelname)
+    status = JuMP.termination_status(model.modelname)
     println("\nSolve status: $status")
 
     println("\nReading results...")
@@ -119,7 +120,7 @@ function runmodel(; name="", group="", optionlist...)       # carbon tax in €/
 
     annualelec, capac, tcapac, chart = analyzeresults(results)
 
-    if status != :Optimal
+    if status != MOI.OPTIMAL
         @warn "The solver did not report an optimal solution. It could still be fine, but examine the log."
     end
 
