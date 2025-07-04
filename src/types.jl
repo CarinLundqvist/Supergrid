@@ -40,6 +40,7 @@ struct Params
     csp_density                 ::Float64
     cspsolarmultiple            ::Float64
     windallocation              ::AxisArray{Float64,2}
+    transmissionlimits          ::AxisArray{Float64,2}
 end
 
 struct Vars
