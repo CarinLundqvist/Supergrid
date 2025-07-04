@@ -1,4 +1,6 @@
 # Changes
+*OUTDATED*
+
 Below are the instructions for the original Supergrid-model by Niclas Mattsson. In this section, I will explain the changes that have been made.
 
 The code was run with Julia v.1.3.1 and Gurobi 9.0.0. This was the only combination of Julia and a solver I could get working with the model.
