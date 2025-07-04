@@ -40,7 +40,9 @@ function makesets(REGION, dataregions, hourinfo, inputdatasuffix, options)
     _, ncostclasses, nreservoirclasses = size(hydrovars["potentialcapac"])
 
     windvars = matread(joinpath(inputdata, "GISdata_wind$(datayear)_$regionset$inputdatasuffix.mat"))
-    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$inputdatasuffix.mat"))
+    #solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$inputdatasuffix.mat"))
+    # Removed suffices to be able to use the same solar data for different wind-files
+    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset.mat"))
     nwindclasses = length(windvars["CFtime_windonshoreA"][1,1,:])
     noffwindclasses = length(windvars["CFtime_windoffshore"][1,1,:])
     npvclasses = length(solarvars["CFtime_pvplantA"][1,1,:])
@@ -117,7 +119,7 @@ CRF(r,T) = r / (1 - 1/(1+r)^T)
 function makeparameters(sets, options, hourinfo)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, dataregions = sets
     @unpack discountrate, datayear, regionset, solarwindarea, islandindexes,
-            inputdatasuffix, sspscenario, sspyear, historical_allocation, allocation_of_wind = options
+            inputdatasuffix, sspscenario, sspyear, historical_allocation, allocation_of_wind, realistic_transmissioncapacity = options
 
     hoursperyear = 24 * Dates.daysinyear(datayear)
     hoursperperiod = Int(hourinfo.hoursperperiod)
@@ -244,7 +246,7 @@ function makeparameters(sets, options, hourinfo)
         :wind           825         0               33          25          1           1
         :offwind        1500        0               55          25          1           1
         :transmission   NaN         0               NaN         50          NaN         1
-        :battery        58          0.1             1.5         15          0.85         1   # 1h discharge time, 150 €/kW = 150 €/kWh
+        :battery        116         0               1.5         15          0.85        1   # 1h discharge time, 150 €/kW = 150 €/kWh
         :pv             323         0               8           25          1           1
         :pvroof         423         0               5.8         25          1           1
         :csp            3746        2.9             56          30          1           1   # for solar multiple=3, storage=12 hours
@@ -280,7 +282,9 @@ function makeparameters(sets, options, hourinfo)
     emissionsCO2[[:coal,:gas]] = [0.330, 0.202]     # kgCO2/kWh fuel (or ton/MWh or kton/GWh)
 
     windvars = matread(joinpath(inputdata, "GISdata_wind$(datayear)_$regionset$inputdatasuffix.mat"))
-    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$inputdatasuffix.mat"))
+    #solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$inputdatasuffix.mat"))
+    # Removed suffices to be able to use the same solar data for different wind-files
+    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset.mat"))
 
     allclasses = union(vreCLASS, sets.CLASS[:hydro], [:_])
     classlimits = AxisArray(zeros(numregions,5,nclasses), REGION, [:wind, :offwind, :pv, :pvroof, :csp], vreCLASS)
@@ -352,7 +356,6 @@ function makeparameters(sets, options, hourinfo)
     # end
 
     if historical_allocation
-        #jakobsson_allocation = [0,0,0,1,1,1,1,2,1,2]
         jakobsson_allocation = allocation_of_wind
         allocation = jakobsson_allocation .* 0.1
     else
@@ -363,10 +366,12 @@ function makeparameters(sets, options, hourinfo)
     allocation_matrix = allocation' .* ones(numregions,length(CLASS[:wind]))
     windallocation = AxisArray(allocation_matrix, REGION, CLASS[:wind])
 
+    transmissionlimits = getTransmissionLimits(regionset)
+
     return Params(cf, transmissionlosses, demand, hydrocapacity, cfhydroinflow, classlimits, transmissionislands,
         efficiency, rampingrate, dischargetime, initialstoragelevel, minflow_existinghydro, emissionsCO2, fuelcost,
         variablecost, smalltransmissionpenalty, investcost, crf, fixedcost, transmissioninvestcost, transmissionfixedcost,
-        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation)
+        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation, transmissionlimits)
 end
 
 # Run fix_timezone_error() if an error like this is produced (the build step should take care if this for most people):
@@ -378,3 +383,119 @@ end
 #   1.257888 seconds (1.77 M allocations: 92.844 MiB, 2.44% gc time)
 # ERROR: UnhandledTimeError: TimeZone Europe/Oslo does not handle dates on or after 2038-03-28T01:00:00 UTC
 fix_timezone_error() = TimeZones.TZData.compile(max_year=2200)
+
+function getTransmissionLimits(regionset)
+    if regionset == "Transmission_Australia"
+        REGION = [:AUS_NE, :AUS_E, :AUS_SE, :AUS_S, :AUS_W, :AUS_N]
+        transmissionmatrix =   [0  1.2   0   0   0   0;
+                                1.2  0   0.9  0   0   0;
+                                0  0.9   0  0.9  0   0;
+                                0   0   0.9  0   0   0;
+                                0   0    0   0   0   0;
+                                0   0    0   0   0   0]
+    elseif regionset == "Transmission_USA"
+        # NERC had this map of Tranfer capabilities: https://www.nerc.com/pa/RAPA/Documents/ITCS_CTC_Map.pdf
+        REGION = [Symbol("West"), Symbol("Central West"), Symbol("South"), Symbol("Middle"), Symbol("Southeast"), Symbol("East"), Symbol("Northest")]
+        transmissionmatrix =   [0   30   0    0   0   0   0;
+                                30   0  0.4  0.7  0   0   0;
+                                0  0.4   0    5   10  5   0;
+                                0  0.7   5    0   0   15  0;
+                                0   0    10   0   0   26  0;
+                                0   0    5    15  26  0   5;
+                                0   0    0    0   0   5   0]
+    elseif regionset == "Transmission_Europe"
+        REGION = [:SWE, :NOR, :DEN, :FIN, :NL, :BL, :LX, :GER, :FRA, :UK, :IR, :ITA, :POL, :EST, :LAT, :LIT, :SPA, :POR, :AUS, :SWI, :CZR, :SLO, :HUN]
+        transmissionmatrix = zeros(length(REGION),length(REGION))
+        # Using 2025 numbers from Ember: https://ember-energy.org/latest-insights/breaking-borders-europe-electricity-interconnectors/
+        # Transmissions to and from Sweden
+        transmissionmatrix[1,2] = transmissionmatrix[2,1] = 3.7 #Sweden
+        transmissionmatrix[1,3] = transmissionmatrix[3,1] = 2.5 #Denmark
+        transmissionmatrix[1,4] = transmissionmatrix[4,1] = 2.4 #Finland
+        transmissionmatrix[1,8] = transmissionmatrix[8,1] = 0.6 #Germany
+        transmissionmatrix[1,13] = transmissionmatrix[13,1] = 0.6   #Poland
+        transmissionmatrix[1,16] = transmissionmatrix[16,1] = 0.7   #Lithuania
+        # Transmissions to and from Norway
+        transmissionmatrix[2,3] = transmissionmatrix[3,2] = 1.6 #Denmark
+        transmissionmatrix[2,5] = transmissionmatrix[5,2] = 0.7 #Netherlands
+        transmissionmatrix[2,8] = transmissionmatrix[8,2] = 1.4 #Germany
+        transmissionmatrix[2,10] = transmissionmatrix[10,2] = 1.4   #UK
+        # Transmissions to and from Denmark
+        transmissionmatrix[3,5] = transmissionmatrix[5,3] = 0.7 #Netherlands
+        transmissionmatrix[3,8] = transmissionmatrix[8,3] = 4.7 #Germany
+        transmissionmatrix[3,10] = transmissionmatrix[10,3] = 1.4 #UK
+        # Transmissions to and from Finland
+        transmissionmatrix[4,14] = transmissionmatrix[14,4] = 1 #Estonia
+        # Transmisisons to and from Netherlands
+        transmissionmatrix[5,6] = transmissionmatrix[6,5] = 3.4 #Belgium
+        transmissionmatrix[5,8] = transmissionmatrix[8,5] = 5 #Germany
+        transmissionmatrix[5,10] = transmissionmatrix[10,5] = 1 #UK
+        # Transmisisons to and from Belgium
+        transmissionmatrix[6,7] = transmissionmatrix[7,6] = 0.7 #Luxembourg
+        transmissionmatrix[6,8] = transmissionmatrix[8,6] = 1 #Germany
+        transmissionmatrix[6,9] = transmissionmatrix[9,6] = 4.3 #France
+        transmissionmatrix[6,10] = transmissionmatrix[10,6] = 1 #UK
+        # Transmissions to and from Luxembourg
+        transmissionmatrix[7,8] = transmissionmatrix[8,7] = 2.3 #Germany
+        transmissionmatrix[7,9] = transmissionmatrix[9,7] = 0.4 #France
+        # Transmissions to and from Germany
+        transmissionmatrix[8,21] = transmissionmatrix[21,8] = 1.6 #Czech republic
+        transmissionmatrix[8,20] = transmissionmatrix[20,8] = 4.2 #Switzerland
+        transmissionmatrix[8,19] = transmissionmatrix[19,8] = 5.4 #Austria
+        transmissionmatrix[8,13] = transmissionmatrix[13,8] = 3   #Poland
+        transmissionmatrix[8,9] = transmissionmatrix[9,8] = 3.3   #France
+        # Transmissions to and from France
+        transmissionmatrix[9,17] = transmissionmatrix[17,9] = 5   #Spain
+        transmissionmatrix[9,10] = transmissionmatrix[10,9] = 4   #UK
+        transmissionmatrix[9,20] = transmissionmatrix[20,9] = 3.7   #Switzerland
+        transmissionmatrix[9,12] = transmissionmatrix[12,9] = 4.1   #Italy
+        # Transmissions to and from UK
+        transmissionmatrix[10,11] = transmissionmatrix[11,10] = 1.8   #Ireland
+        # Transmissions to and from Ireland
+            # See UK
+        # Transmissions to and from Italy
+        transmissionmatrix[12,20] = transmissionmatrix[20,12] = 3.8   #Switzerland
+        transmissionmatrix[12,19] = transmissionmatrix[19,12] = 0.8   #Austria
+            # Excluded transmissions: Montenegro, Greece, Malta, Slovenia
+        # Transmissions to and from Poland
+        transmissionmatrix[13,21] = transmissionmatrix[21,13] = 1.4   #Czech republic
+        transmissionmatrix[13,22] = transmissionmatrix[22,13] = 2   #Slovakia
+        transmissionmatrix[13,16] = transmissionmatrix[16,13] = 0.5   #Lithuania
+        # Transmissions to and from Estonia
+        transmissionmatrix[14,22] = transmissionmatrix[22,14] = 1.1   #Latvia
+        # Transmissions to and from Latvia
+        transmissionmatrix[15,16] = transmissionmatrix[16,15] = 1   #Lithuania
+        # Transmissions to and from Lithuania
+            # See Latvia, Poland, Sweden
+        # Transmissions to and from Spain
+        transmissionmatrix[17,18] = transmissionmatrix[18,17] = 4.2   #Portugal
+        # Transmissions to and from Portugal
+            # See Spain
+        # Transmissions to and from Austria
+        transmissionmatrix[19,20] = transmissionmatrix[20,19] = 1.2   #Switzerland
+        transmissionmatrix[19,21] = transmissionmatrix[21,19] = 0.9   #Czech republic
+        transmissionmatrix[19,23] = transmissionmatrix[23,19] = 0.8   #Hungary
+            # Excluded transmissions: Slovenia
+        # Transmissions to and from Switzerland
+            # See France, Germany, Austria and Italy
+        # Transmissions to and from the Czech republic
+        transmissionmatrix[21,22] = transmissionmatrix[22,21] = 1.8   #Slovakia
+        # Transmissions to and from the Slovakia
+        transmissionmatrix[22,23] = transmissionmatrix[23,22] = 2.6   #Hungary
+            # Excluded transmissions: Ukraine
+        # Transmissions to and from Hungary
+            # Excluded transmissions: Slovenia, Croatia, Serbia, Romania, Ukraine
+    elseif regionset == "Transmission_China"
+        REGION = [:CH_N, :CH_NE, :CH_E, :CH_SC, :CH_SW, :CH_NW]
+        transmissionmatrix = [  0   5   77.3   5    0   3.6;
+                                5   0    0   2.6    0    0;
+                              77.3  0    0    15  45.6  43.5;
+                                5  2.6   15    0   50   33.1;
+                                0   0   45.6  50    0   3.6;
+                               3.6  0   43.5 33.1  3.6   0]
+    else
+        REGION = [:NoRegion]
+        transmissionmatrix = zeros(length(REGION),length(REGION))
+    end
+    transmissionlimits = AxisArray(transmissionmatrix, REGION, REGION)
+    return transmissionlimits
+end

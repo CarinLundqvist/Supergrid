@@ -56,37 +56,42 @@ end
 function setbounds(sets, params, vars, options)
     @unpack REGION, TECH, CLASS, techtype = sets
     @unpack Capacity, TransmissionCapacity = vars
-    @unpack classlimits, hydrocapacity, transmissionislands, demand = params
-    @unpack hydroinvestmentsallowed, nuclearallowed, transmissionallowed, disabletechs = options
+    @unpack classlimits, hydrocapacity, transmissionislands, demand, transmissionlimits = params
+    @unpack hydroinvestmentsallowed, nuclearallowed, transmissionallowed, disabletechs, realistic_transmissioncapacity = options
     for r in REGION, k in TECH
         if techtype[k] == :vre || k == :csp
             for c in CLASS[k]
-                setupperbound(Capacity[r,k,c], classlimits[r,k,c])
+                set_upper_bound(Capacity[r,k,c], classlimits[r,k,c])
             end
         end
     end
     for r in REGION
-        setlowerbound(Capacity[r,:hydro,:x0], hydrocapacity[r,:x0])
+        set_lower_bound(Capacity[r,:hydro,:x0], hydrocapacity[r,:x0])
         for c in CLASS[:hydro]
             if hydroinvestmentsallowed
-                setupperbound(Capacity[r,:hydro,c], hydrocapacity[r,c])
+                set_upper_bound(Capacity[r,:hydro,c], hydrocapacity[r,c])
             else
-                setupperbound(Capacity[r,:hydro,c], c == :x0 ? hydrocapacity[r,c] : 0.0)
+                set_upper_bound(Capacity[r,:hydro,c], c == :x0 ? hydrocapacity[r,c] : 0.0)
             end
         end
     end
     if !nuclearallowed
         for r in REGION
-            setupperbound(Capacity[r,:nuclear,:_], 0.0)
+            set_upper_bound(Capacity[r,:nuclear,:_], 0.0)
         end
     end
     for r1 in REGION, r2 in REGION
         if transmissionallowed == :none || (transmissionallowed == :islands && !transmissionislands[r1,r2])
-            setupperbound(TransmissionCapacity[r1,r2], 0.0)
+            set_upper_bound(TransmissionCapacity[r1,r2], 0.0)
+        end
+    end
+    if realistic_transmissioncapacity
+        for r1 in REGION, r2 in REGION
+            set_upper_bound(TransmissionCapacity[r1,r2], transmissionlimits[r1,r2])
         end
     end
     for r in REGION, k in disabletechs, c in CLASS[k]
-        setupperbound(Capacity[r,k,c], 0.0)
+        set_upper_bound(Capacity[r,k,c], 0.0)
     end
     # for r in REGION
     #   setupperbound(AnnualGeneration[r,:csp], 0.50 * (demandsum[r,h] for h in HOUR) * hoursperperiod)

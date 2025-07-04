@@ -28,10 +28,11 @@ function readresults(model::ModelInfo, status::MOI.TerminationStatusCode)
     transmissioncapac = AxisArray(JuMP.value.(TransmissionCapacity))
     capac = getdict(JuMP.value.(Capacity))
 
-    return Results(status, model.options, model.hourinfo, model.sets, params, cost, emis, fuel, elec, charge, storage, transmission, transmissioncapac, capac)
+    return (Status = status, options=model.options, hourinfo=model.hourinfo, sets=model.sets, params=params, Systemcost=cost, CO2emissions=emis, FuelUse=fuel, Electricity=elec, Charging=charge, StorageLevel=storage, Transmission=transmission, TransmissionCapacity=transmissioncapac, Capacity=capac)
+    #return Results(status, model.options, model.hourinfo, model.sets, params, cost, emis, fuel, elec, charge, storage, transmission, transmissioncapac, capac)
 end
 
-function saveresults(results::Results, runname; resultsfile="", group="", compress=true)
+function saveresults(results, runname; resultsfile="", group="", compress=true)
     isempty(resultsfile) && return nothing
     if !isempty(group) && group[end] != '/'
         group *= "/"
@@ -104,7 +105,7 @@ const CHARTTECHS = Dict(
 )
 
 
-function analyzeresults(results::Results)
+function analyzeresults(results)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, techtype, STORAGECLASS = results.sets
     @unpack demand, classlimits, hydrocapacity = results.params
     @unpack CO2emissions, FuelUse, Electricity, Transmission, Capacity, TransmissionCapacity, Charging, StorageLevel, Systemcost = results
