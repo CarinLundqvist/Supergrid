@@ -122,24 +122,25 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
 
         Bogdanov[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
             Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                (windallocation1[r,CLASS[:wind][i]] * b[r] +
-                windallocation2[r,CLASS[:wind][i]] * (1-b[r])
+                (windallocation1[r,CLASS[:wind][i]] * b1[r] +
+                windallocation2[r,CLASS[:wind][i]] * b2[r] +
+                windallocation3[r,CLASS[:wind][i]] * b3[r]
                 ) * sum(Capacity[r,:wind,class] for class in CLASS[:wind])
         
         Binary1[r in REGION],
             b1[r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (0.95 * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
-        InverseBinary1[r in REGION],
-            !b1[r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+        #InverseBinary1[r in REGION],
+        #    !b1[r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
 
         Binary2[r in REGION],
-            b2[r] => {(Capacity[r,:wind,CLASS[:wind][9]] + Capacity[r,:wind,CLASS[:wind][19]]) <= (0.95 * (classlimits[r,:wind,CLASS[:wind][9]] + classlimits[r,:wind,CLASS[:wind][19]]))}
-        InverseBinary2[r in REGION],
-            !b2[r] => {(Capacity[r,:wind,CLASS[:wind][9]] + Capacity[r,:wind,CLASS[:wind][19]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][9]] + classlimits[r,:wind,CLASS[:wind][19]]))}
+            b2[r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+        #InverseBinary2[r in REGION],
+        #    !b2[r] => {(Capacity[r,:wind,CLASS[:wind][9]] + Capacity[r,:wind,CLASS[:wind][19]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][9]] + classlimits[r,:wind,CLASS[:wind][19]]))}
 
         Binary3[r in REGION],
-            b3[r] => {(Capacity[r,:wind,CLASS[:wind][8]] + Capacity[r,:wind,CLASS[:wind][18]]) <= (0.95 * (classlimits[r,:wind,CLASS[:wind][8]] + classlimits[r,:wind,CLASS[:wind][18]]))}
-        InverseBinary3[r in REGION],
-            !b3[r] => {(Capacity[r,:wind,CLASS[:wind][8]] + Capacity[r,:wind,CLASS[:wind][18]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][8]] + classlimits[r,:wind,CLASS[:wind][18]]))}
+            b3[r] => {(Capacity[r,:wind,CLASS[:wind][9]] + Capacity[r,:wind,CLASS[:wind][19]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][9]] + classlimits[r,:wind,CLASS[:wind][19]]))}
+        #InverseBinary3[r in REGION],
+        #    !b3[r] => {(Capacity[r,:wind,CLASS[:wind][8]] + Capacity[r,:wind,CLASS[:wind][18]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][8]] + classlimits[r,:wind,CLASS[:wind][18]]))}
 
         OneBinary[r in REGION],
             b1[r] + b2[r] + b3[r] == 1
