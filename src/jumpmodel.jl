@@ -47,10 +47,13 @@ function makevariables(m, sets)
         TransmissionCapacity[r1 in REGION, r2 in REGION] >= 0                           # GW elec
         Capacity[r in REGION, k in TECH, c in CLASS[k]] >= 0                            # GW elec
         SolarCapacity[r in REGION, k in [:pv, :csp], pv in CLASS[:pv], csp in CLASS[:csp]] >= 0     # GW elec
+        b1[r in REGION], Bin  # binary variable for Bogdanov constraint 
+        b2[r in REGION], Bin  # binary variable for Bogdanov constraint 
+        b3[r in REGION], Bin  # binary variable for Bogdanov constraint 
     end #variables
 
     return Vars(Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
-                    Transmission, TransmissionCapacity, Capacity, SolarCapacity)
+                    Transmission, TransmissionCapacity, Capacity, SolarCapacity,b1,b2,b3)
 end
 
 function setbounds(sets, params, vars, options)
@@ -103,18 +106,43 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
     @unpack cf, transmissionlosses, demand, cfhydroinflow, efficiency, rampingrate, dischargetime, initialstoragelevel,
             minflow_existinghydro, emissionsCO2, fuelcost, variablecost, smalltransmissionpenalty, investcost, crf, fixedcost,
             transmissioninvestcost, transmissionfixedcost, hydroeleccost, solarcombinedarea,
-            pv_density, csp_density, cspsolarmultiple, windallocation = params
+            pv_density, csp_density, cspsolarmultiple, windallocation1, windallocation2, windallocation3, classlimits = params
     @unpack Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
-            Transmission, TransmissionCapacity, Capacity, SolarCapacity = vars
+            Transmission, TransmissionCapacity, Capacity, SolarCapacity, b1, b2, b3 = vars
     @unpack hoursperperiod = hourinfo
     @unpack carbontax, carboncap, rampingconstraints, maxbioenergy, globalnuclearlimit = options
 
     storagetechs = [k for k in TECH if techtype[k] == :storage]
 
+    ε = 1e-5  # small number to avoid numerical issues
     @constraints m begin
+        #Bogdanov[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
+        #    Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
+        #        windallocation1[r,CLASS[:wind][i]]*sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+
         Bogdanov[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
             Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                windallocation[r,CLASS[:wind][i]]*sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+                (windallocation1[r,CLASS[:wind][i]] * b[r] +
+                windallocation2[r,CLASS[:wind][i]] * (1-b[r])
+                ) * sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+        
+        Binary1[r in REGION],
+            b1[r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (0.95 * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+        InverseBinary1[r in REGION],
+            !b1[r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+
+        Binary2[r in REGION],
+            b2[r] => {(Capacity[r,:wind,CLASS[:wind][9]] + Capacity[r,:wind,CLASS[:wind][19]]) <= (0.95 * (classlimits[r,:wind,CLASS[:wind][9]] + classlimits[r,:wind,CLASS[:wind][19]]))}
+        InverseBinary2[r in REGION],
+            !b2[r] => {(Capacity[r,:wind,CLASS[:wind][9]] + Capacity[r,:wind,CLASS[:wind][19]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][9]] + classlimits[r,:wind,CLASS[:wind][19]]))}
+
+        Binary3[r in REGION],
+            b3[r] => {(Capacity[r,:wind,CLASS[:wind][8]] + Capacity[r,:wind,CLASS[:wind][18]]) <= (0.95 * (classlimits[r,:wind,CLASS[:wind][8]] + classlimits[r,:wind,CLASS[:wind][18]]))}
+        InverseBinary3[r in REGION],
+            !b3[r] => {(Capacity[r,:wind,CLASS[:wind][8]] + Capacity[r,:wind,CLASS[:wind][18]]) >= ((0.95 + ε) * (classlimits[r,:wind,CLASS[:wind][8]] + classlimits[r,:wind,CLASS[:wind][18]]))}
+
+        OneBinary[r in REGION],
+            b1[r] + b2[r] + b3[r] == 1
 
         ElecCapacity[r in REGION, k in TECH, c in CLASS[k], h in HOUR],
             Electricity[r,k,c,h] <= Capacity[r,k,c] * (k == :csp ? 1 : cf[r,k,c,h]) * hoursperperiod

@@ -118,8 +118,8 @@ CRF(r,T) = r / (1 - 1/(1+r)^T)
 
 function makeparameters(sets, options, hourinfo)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, dataregions = sets
-    @unpack discountrate, datayear, regionset, solarwindarea, islandindexes,
-            inputdatasuffix, sspscenario, sspyear, historical_allocation, allocation_of_wind, realistic_transmissioncapacity = options
+    @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, inputdatasuffix, sspscenario, sspyear, 
+            historical_allocation, allocation_of_wind1, allocation_of_wind2, allocation_of_wind3, realistic_transmissioncapacity = options
 
     hoursperyear = 24 * Dates.daysinyear(datayear)
     hoursperperiod = Int(hourinfo.hoursperperiod)
@@ -356,22 +356,31 @@ function makeparameters(sets, options, hourinfo)
     # end
 
     if historical_allocation
-        jakobsson_allocation = allocation_of_wind
-        allocation = jakobsson_allocation .* 0.1
+        allocation1 = allocation_of_wind1 .* 0.1
+        allocation2 = allocation_of_wind2 .* 0.1
+        allocation3 = allocation_of_wind3 .* 0.1
     else
-        allocation = ones(10)
+        allocation1 = ones(10)
+        allocation2 = ones(10)
+        allocation3 = ones(10)
     end
     
-    allocation = vcat(allocation,allocation)
-    allocation_matrix = allocation' .* ones(numregions,length(CLASS[:wind]))
-    windallocation = AxisArray(allocation_matrix, REGION, CLASS[:wind])
+    allocation1 = vcat(allocation1,allocation1)
+    allocation_matrix1 = allocation1' .* ones(numregions,length(CLASS[:wind]))
+    windallocation1 = AxisArray(allocation_matrix1, REGION, CLASS[:wind])
+    allocation2 = vcat(allocation2,allocation2)
+    allocation_matrix2 = allocation2' .* ones(numregions,length(CLASS[:wind]))
+    windallocation2 = AxisArray(allocation_matrix2, REGION, CLASS[:wind])
+    allocation3 = vcat(allocation3,allocation3)
+    allocation_matrix3 = allocation3' .* ones(numregions,length(CLASS[:wind]))
+    windallocation3 = AxisArray(allocation_matrix3, REGION, CLASS[:wind])
 
     transmissionlimits = getTransmissionLimits(regionset)
 
     return Params(cf, transmissionlosses, demand, hydrocapacity, cfhydroinflow, classlimits, transmissionislands,
         efficiency, rampingrate, dischargetime, initialstoragelevel, minflow_existinghydro, emissionsCO2, fuelcost,
         variablecost, smalltransmissionpenalty, investcost, crf, fixedcost, transmissioninvestcost, transmissionfixedcost,
-        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation, transmissionlimits)
+        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation1, windallocation2, windallocation3, transmissionlimits)
 end
 
 # Run fix_timezone_error() if an error like this is produced (the build step should take care if this for most people):

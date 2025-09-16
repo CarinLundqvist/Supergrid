@@ -44,7 +44,9 @@ defaultoptions() = Dict(
     :datafolder => "",                  # Full path to GIS input data. Set to "" to use the folder in HOMEDIR/.GlobalEnergyGIS_config.
     :resultsfile => "results.jld2",     # use "" to skip saving the results in the database
     :historical_allocation => false,    # installations allocated according to the results in Jacobsson et al 2024
-    :allocation_of_wind => [1,1,1,1,1,1,1,1,1,1],
+    :allocation_of_wind1 => [1,1,1,1,1,1,1,1,1,1],
+    :allocation_of_wind2 => [1,1,1,1,1,1,1,1,1,1],
+    :allocation_of_wind3 => [1,1,1,1,1,1,1,1,1,1],
     :realistic_transmissioncapacity => false    # Allows the use of realistic transmission connections between subregions. See function getTransmissionLimits in inputdata.jl
 )
 

@@ -39,7 +39,9 @@ struct Params
     pv_density                  ::Float64
     csp_density                 ::Float64
     cspsolarmultiple            ::Float64
-    windallocation              ::AxisArray{Float64,2}
+    windallocation1             ::AxisArray{Float64,2}
+    windallocation2             ::AxisArray{Float64,2}
+    windallocation3             ::AxisArray{Float64,2}
     transmissionlimits          ::AxisArray{Float64,2}
 end
 
@@ -55,6 +57,9 @@ struct Vars
     TransmissionCapacity        ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
     Capacity                    ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,3}
     SolarCapacity               ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,4}
+    b1                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b2                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b3                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
 end
 
 # add type info here too
