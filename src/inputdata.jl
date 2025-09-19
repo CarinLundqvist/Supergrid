@@ -420,15 +420,14 @@ function makeparameters(sets, options, hourinfo)
     allocation10 = vcat(allocation10,allocation10)
     allocation_matrix10 = allocation10' .* ones(numregions,length(CLASS[:wind]))
     windallocation10 = AxisArray(allocation_matrix10, REGION, CLASS[:wind])  
-    
 
     transmissionlimits = getTransmissionLimits(regionset)
 
     return Params(cf, transmissionlosses, demand, hydrocapacity, cfhydroinflow, classlimits, transmissionislands,
         efficiency, rampingrate, dischargetime, initialstoragelevel, minflow_existinghydro, emissionsCO2, fuelcost,
         variablecost, smalltransmissionpenalty, investcost, crf, fixedcost, transmissioninvestcost, transmissionfixedcost,
-        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, transmissionlimits,
-        windallocation1, windallocation2, windallocation3, windallocation4, windallocation5, windallocation6, windallocation7, windallocation8, windallocation9, windallocation10)
+        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation1, windallocation2, windallocation3, 
+        windallocation4, windallocation5, windallocation6, windallocation7, windallocation8, windallocation9, windallocation10, transmissionlimits,)
 end
 
 # Run fix_timezone_error() if an error like this is produced (the build step should take care if this for most people):
