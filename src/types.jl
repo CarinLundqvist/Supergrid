@@ -42,6 +42,13 @@ struct Params
     windallocation1             ::AxisArray{Float64,2}
     windallocation2             ::AxisArray{Float64,2}
     windallocation3             ::AxisArray{Float64,2}
+    windallocation4             ::AxisArray{Float64,2}
+    windallocation5             ::AxisArray{Float64,2}
+    windallocation6             ::AxisArray{Float64,2}
+    windallocation7             ::AxisArray{Float64,2}
+    windallocation8             ::AxisArray{Float64,2}
+    windallocation9             ::AxisArray{Float64,2}
+    windallocation10            ::AxisArray{Float64,2}
     transmissionlimits          ::AxisArray{Float64,2}
 end
 
@@ -60,6 +67,13 @@ struct Vars
     b1                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
     b2                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
     b3                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b4                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b5                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b6                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b7                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b8                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b9                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b10                         ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
 end
 
 # add type info here too
