@@ -3,7 +3,7 @@ module Supergrid
 export runmodel, buildmodel, readresults, saveresults, analyzeresults, listresults, loadresults, makesets, makeparameters,
         fix_timezone_error, chart_energymix_scenarios
 
-using JuMP, Gurobi, GLPK, Clp, Parameters, AxisArrays, Plots, JLD2, Statistics
+using JuMP, Gurobi, GLPK, Clp, Parameters, AxisArrays, Plots, JLD2, Statistics, MathOptInterface
 
 include("helperfunctions.jl")
 include("types.jl")
@@ -44,16 +44,17 @@ defaultoptions() = Dict(
     :datafolder => "",                  # Full path to GIS input data. Set to "" to use the folder in HOMEDIR/.GlobalEnergyGIS_config.
     :resultsfile => "results.jld2",     # use "" to skip saving the results in the database
     :historical_allocation => false,    # installations allocated according to the results in Jacobsson et al 2024
-    :allocation_of_wind1 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind2 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind3 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind4 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind5 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind6 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind7 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind8 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind9 => [10,10,10,10,10,10,10,10,10,10],
-    :allocation_of_wind10 => [10,10,10,10,10,10,10,10,10,10],
+    :allocation_of_wind => [[10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10]
+                            ],
     :realistic_transmissioncapacity => false    # Allows the use of realistic transmission connections between subregions. See function getTransmissionLimits in inputdata.jl
 )
 

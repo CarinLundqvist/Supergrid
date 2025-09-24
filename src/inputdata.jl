@@ -119,8 +119,7 @@ CRF(r,T) = r / (1 - 1/(1+r)^T)
 function makeparameters(sets, options, hourinfo)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, dataregions = sets
     @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, inputdatasuffix, sspscenario, sspyear, 
-            historical_allocation, realistic_transmissioncapacity, allocation_of_wind1, allocation_of_wind2, allocation_of_wind3, allocation_of_wind4, 
-            allocation_of_wind5, allocation_of_wind6, allocation_of_wind7, allocation_of_wind8, allocation_of_wind9, allocation_of_wind10  = options
+            historical_allocation, realistic_transmissioncapacity, allocation_of_wind  = options
 
     hoursperyear = 24 * Dates.daysinyear(datayear)
     hoursperperiod = Int(hourinfo.hoursperperiod)
@@ -356,78 +355,20 @@ function makeparameters(sets, options, hourinfo)
     #   display(plot(qq./maximum(qq,dims=1), size=(1850,950)))
     # end
 
-    if historical_allocation
-        allocation1 = allocation_of_wind1 .* 0.1
-        allocation2 = allocation_of_wind2 .* 0.1
-        allocation3 = allocation_of_wind3 .* 0.1
-        allocation4 = allocation_of_wind4 .* 0.1
-        allocation5 = allocation_of_wind5 .* 0.1
-        allocation6 = allocation_of_wind6 .* 0.1
-        allocation7 = allocation_of_wind7 .* 0.1
-        allocation8 = allocation_of_wind8 .* 0.1
-        allocation9 = allocation_of_wind9 .* 0.1
-        allocation10 = allocation_of_wind10 .* 0.1
-    else
-        allocation1 = ones(10)
-        allocation2 = ones(10)
-        allocation3 = ones(10)
-        allocation4 = ones(10)
-        allocation5 = ones(10)
-        allocation6 = ones(10) 
-        allocation7 = ones(10)
-        allocation8 = ones(10)
-        allocation9 = ones(10)
-        allocation10 = ones(10)
-    end
-    
+    allocation = allocation_of_wind .* 0.1
 
-    allocation1 = vcat(allocation1,allocation1)
-    allocation_matrix1 = allocation1' .* ones(numregions,length(CLASS[:wind]))
-    windallocation1 = AxisArray(allocation_matrix1, REGION, CLASS[:wind])
+    #allocation1 = vcat(allocation1,allocation1)
+    #allocation_matrix1 = allocation1' .* ones(numregions,length(CLASS[:wind]))
+    #windallocation1 = AxisArray(allocation_matrix1, REGION, CLASS[:wind])
 
-    allocation2 = vcat(allocation2,allocation2)
-    allocation_matrix2 = allocation2' .* ones(numregions,length(CLASS[:wind]))
-    windallocation2 = AxisArray(allocation_matrix2, REGION, CLASS[:wind])
-
-    allocation3 = vcat(allocation3,allocation3)
-    allocation_matrix3 = allocation3' .* ones(numregions,length(CLASS[:wind]))
-    windallocation3 = AxisArray(allocation_matrix3, REGION, CLASS[:wind])
-
-    allocation4 = vcat(allocation4,allocation4)
-    allocation_matrix4 = allocation4' .* ones(numregions,length(CLASS[:wind]))
-    windallocation4 = AxisArray(allocation_matrix4, REGION, CLASS[:wind])
-
-    allocation5 = vcat(allocation5,allocation5)
-    allocation_matrix5 = allocation5' .* ones(numregions,length(CLASS[:wind]))
-    windallocation5 = AxisArray(allocation_matrix5, REGION, CLASS[:wind])
-
-    allocation6 = vcat(allocation6,allocation6)
-    allocation_matrix6 = allocation6' .* ones(numregions,length(CLASS[:wind]))
-    windallocation6 = AxisArray(allocation_matrix6, REGION, CLASS[:wind])
-
-    allocation7 = vcat(allocation7,allocation7)
-    allocation_matrix7 = allocation7' .* ones(numregions,length(CLASS[:wind]))
-    windallocation7 = AxisArray(allocation_matrix7, REGION, CLASS[:wind])
-
-    allocation8 = vcat(allocation8,allocation8)
-    allocation_matrix8 = allocation8' .* ones(numregions,length(CLASS[:wind]))
-    windallocation8 = AxisArray(allocation_matrix8, REGION, CLASS[:wind])
-
-    allocation9 = vcat(allocation9,allocation9)
-    allocation_matrix9 = allocation9' .* ones(numregions,length(CLASS[:wind]))
-    windallocation9 = AxisArray(allocation_matrix9, REGION, CLASS[:wind])
-
-    allocation10 = vcat(allocation10,allocation10)
-    allocation_matrix10 = allocation10' .* ones(numregions,length(CLASS[:wind]))
-    windallocation10 = AxisArray(allocation_matrix10, REGION, CLASS[:wind])  
+    windallocation = [AxisArray(vcat(a,a)' .* ones(numregions,length(CLASS[:wind])), REGION, CLASS[:wind]) for a in allocation]
 
     transmissionlimits = getTransmissionLimits(regionset)
 
     return Params(cf, transmissionlosses, demand, hydrocapacity, cfhydroinflow, classlimits, transmissionislands,
         efficiency, rampingrate, dischargetime, initialstoragelevel, minflow_existinghydro, emissionsCO2, fuelcost,
         variablecost, smalltransmissionpenalty, investcost, crf, fixedcost, transmissioninvestcost, transmissionfixedcost,
-        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation1, windallocation2, windallocation3, 
-        windallocation4, windallocation5, windallocation6, windallocation7, windallocation8, windallocation9, windallocation10, transmissionlimits,)
+        hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple, windallocation, transmissionlimits,)
 end
 
 # Run fix_timezone_error() if an error like this is produced (the build step should take care if this for most people):

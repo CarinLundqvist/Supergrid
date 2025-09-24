@@ -39,16 +39,7 @@ struct Params
     pv_density                  ::Float64
     csp_density                 ::Float64
     cspsolarmultiple            ::Float64
-    windallocation1             ::AxisArray{Float64,2}
-    windallocation2             ::AxisArray{Float64,2}
-    windallocation3             ::AxisArray{Float64,2}
-    windallocation4             ::AxisArray{Float64,2}
-    windallocation5             ::AxisArray{Float64,2}
-    windallocation6             ::AxisArray{Float64,2}
-    windallocation7             ::AxisArray{Float64,2}
-    windallocation8             ::AxisArray{Float64,2}
-    windallocation9             ::AxisArray{Float64,2}
-    windallocation10            ::AxisArray{Float64,2}
+    windallocation              ::Vector{AxisArrays.AxisMatrix{Float64, Matrix{Float64}, Tuple{AxisArrays.Axis{:row, Vector{Symbol}}, AxisArrays.Axis{:col, Vector{Symbol}}}}}
     transmissionlimits          ::AxisArray{Float64,2}
 end
 
@@ -64,16 +55,7 @@ struct Vars
     TransmissionCapacity        ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
     Capacity                    ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,3}
     SolarCapacity               ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,4}
-    b1                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b2                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b3                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b4                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b5                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b6                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b7                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b8                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b9                          ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
-    b10                         ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
+    b                           ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
 end
 
 # add type info here too
