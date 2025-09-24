@@ -43,7 +43,7 @@ defaultoptions() = Dict(
     :sspyear => 2050,                   # SSP year for synthetic demand
     :datafolder => "",                  # Full path to GIS input data. Set to "" to use the folder in HOMEDIR/.GlobalEnergyGIS_config.
     :resultsfile => "results.jld2",     # use "" to skip saving the results in the database
-    :historical_allocation => false,    # installations allocated according to the results in Jacobsson et al 2024
+    :historical_allocation => :none,    # If you want to manually allocate wind capacity according to historical allocation. Alternatives: :none, :strict, :overflow
     :allocation_of_wind => [[10,10,10,10,10,10,10,10,10,10],
                             [10,10,10,10,10,10,10,10,10,10],
                             [10,10,10,10,10,10,10,10,10,10],

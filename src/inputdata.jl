@@ -119,7 +119,7 @@ CRF(r,T) = r / (1 - 1/(1+r)^T)
 function makeparameters(sets, options, hourinfo)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, dataregions = sets
     @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, inputdatasuffix, sspscenario, sspyear, 
-            historical_allocation, realistic_transmissioncapacity, allocation_of_wind  = options
+            realistic_transmissioncapacity, allocation_of_wind  = options
 
     hoursperyear = 24 * Dates.daysinyear(datayear)
     hoursperperiod = Int(hourinfo.hoursperperiod)
@@ -356,10 +356,6 @@ function makeparameters(sets, options, hourinfo)
     # end
 
     allocation = allocation_of_wind .* 0.1
-
-    #allocation1 = vcat(allocation1,allocation1)
-    #allocation_matrix1 = allocation1' .* ones(numregions,length(CLASS[:wind]))
-    #windallocation1 = AxisArray(allocation_matrix1, REGION, CLASS[:wind])
 
     windallocation = [AxisArray(vcat(a,a)' .* ones(numregions,length(CLASS[:wind])), REGION, CLASS[:wind]) for a in allocation]
 
