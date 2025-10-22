@@ -3,7 +3,7 @@ module Supergrid
 export runmodel, buildmodel, readresults, saveresults, analyzeresults, listresults, loadresults, makesets, makeparameters,
         fix_timezone_error, chart_energymix_scenarios
 
-using JuMP, Gurobi, GLPK, Clp, Parameters, AxisArrays, Plots, JLD2, Statistics
+using JuMP, Gurobi, GLPK, Clp, Parameters, AxisArrays, Plots, JLD2, Statistics, MathOptInterface
 
 include("helperfunctions.jl")
 include("types.jl")
@@ -23,16 +23,17 @@ defaultoptions() = Dict(
     :carboncap => 1.0,                  # global cap in kg CO2/kWh elec  (BAU scenario: ~0.5 kgCO2/kWh elec)
     :discountrate => 0.05,
     :maxbioenergy => 0.05,              # max share of biofuel of annual regional electricity demand (assuming CCGT, less if GT) 
+    :maxdemandresponse => 0.05,         # max share of demand response of annual regional electricity demand
     :nuclearallowed => true,
     :globalnuclearlimit => Inf,         # maximum total nuclear capacity in all regions (GW)
     :hydroinvestmentsallowed => false,
     :transmissionallowed => :all,       # :none, :islands, :all
     :hours => 1,                        # 1,2,3 or 6 hours per period
     :solarwindarea => 1,                # area multiplier for GIS solar & wind potentials
-    :datayear => 2017,                  # year of the ERA5 input data (produced by GlobalEnergyGIS.jl)
+    :datayear => 2018,                  # year of the ERA5 input data (produced by GlobalEnergyGIS.jl)
     :selectdays => 1,
     :skipdays => 0,
-    :solver => :cplex,
+    :solver => :gurobi,
     :threads => 4,
     :showsolverlog => true,
     :rampingconstraints => false,
@@ -43,8 +44,18 @@ defaultoptions() = Dict(
     :sspyear => 2050,                   # SSP year for synthetic demand
     :datafolder => "",                  # Full path to GIS input data. Set to "" to use the folder in HOMEDIR/.GlobalEnergyGIS_config.
     :resultsfile => "results.jld2",     # use "" to skip saving the results in the database
-    :historical_allocation => false,    # installations allocated according to the results in Jacobsson et al 2024
-    :allocation_of_wind => [1,1,1,1,1,1,1,1,1,1],
+    :historical_allocation => :none,    # If you want to manually allocate wind capacity according to historical allocation. Alternatives: :none, :strict, :overflow
+    :allocation_of_wind => [[10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10],
+                            [10,10,10,10,10,10,10,10,10,10]
+                            ],
     :realistic_transmissioncapacity => false    # Allows the use of realistic transmission connections between subregions. See function getTransmissionLimits in inputdata.jl
 )
 

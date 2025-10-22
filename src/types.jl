@@ -39,7 +39,7 @@ struct Params
     pv_density                  ::Float64
     csp_density                 ::Float64
     cspsolarmultiple            ::Float64
-    windallocation              ::AxisArray{Float64,2}
+    windallocation              ::Vector{AxisArrays.AxisMatrix{Float64, Matrix{Float64}, Tuple{AxisArrays.Axis{:row, Vector{Symbol}}, AxisArrays.Axis{:col, Vector{Symbol}}}}}
     transmissionlimits          ::AxisArray{Float64,2}
 end
 
@@ -55,6 +55,7 @@ struct Vars
     TransmissionCapacity        ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
     Capacity                    ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,3}
     SolarCapacity               ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,4}
+    b                           ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
 end
 
 # add type info here too
@@ -75,7 +76,6 @@ struct Constraints
     Calculate_FuelUse
     TotalCO2
     Totalcosts
-    Bogdanov
 end
 
 struct HourSampling

@@ -47,10 +47,11 @@ function makevariables(m, sets)
         TransmissionCapacity[r1 in REGION, r2 in REGION] >= 0                           # GW elec
         Capacity[r in REGION, k in TECH, c in CLASS[k]] >= 0                            # GW elec
         SolarCapacity[r in REGION, k in [:pv, :csp], pv in CLASS[:pv], csp in CLASS[:csp]] >= 0     # GW elec
+        b[1:10, r in REGION], Bin  # binary variables for spillover when using overflow allocation constraint
     end #variables
 
     return Vars(Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
-                    Transmission, TransmissionCapacity, Capacity, SolarCapacity)
+                    Transmission, TransmissionCapacity, Capacity, SolarCapacity, b)
 end
 
 function setbounds(sets, params, vars, options)
@@ -102,20 +103,61 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
     @unpack REGION, FUEL, TECH, CLASS, STORAGECLASS, HOUR, techtype, techfuel, reservoirclass = sets
     @unpack cf, transmissionlosses, demand, cfhydroinflow, efficiency, rampingrate, dischargetime, initialstoragelevel,
             minflow_existinghydro, emissionsCO2, fuelcost, variablecost, smalltransmissionpenalty, investcost, crf, fixedcost,
-            transmissioninvestcost, transmissionfixedcost, hydroeleccost, solarcombinedarea,
-            pv_density, csp_density, cspsolarmultiple, windallocation = params
+            transmissioninvestcost, transmissionfixedcost, hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple,
+            windallocation, classlimits = params
     @unpack Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
-            Transmission, TransmissionCapacity, Capacity, SolarCapacity = vars
+            Transmission, TransmissionCapacity, Capacity, SolarCapacity, 
+            b = vars
     @unpack hoursperperiod = hourinfo
-    @unpack carbontax, carboncap, rampingconstraints, maxbioenergy, globalnuclearlimit = options
+    @unpack carbontax, carboncap, rampingconstraints, maxbioenergy, maxdemandresponse, globalnuclearlimit, historical_allocation = options
 
     storagetechs = [k for k in TECH if techtype[k] == :storage]
 
-    @constraints m begin
-        Bogdanov[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
-            Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                windallocation[r,CLASS[:wind][i]]*sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+    threshold = 0.95
+    ε = 1e-5  # small number to avoid numerical issues
+    bracketnumber = [10,9,8,7,6,5,4,3,2]
 
+    # If encountering resource constraints, the model gradually relax the wind power allocations
+    # by using a spill-and-fill approach where capacity is redirected to lower classes. 
+    if historical_allocation == :overflow
+        @constraint(m, OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
+                Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
+                    (windallocation[1][r,CLASS[:wind][i]] * b[1,r] +
+                    windallocation[2][r,CLASS[:wind][i]] * b[2,r] +
+                    windallocation[3][r,CLASS[:wind][i]] * b[3,r] +
+                    windallocation[4][r,CLASS[:wind][i]] * b[4,r] +
+                    windallocation[5][r,CLASS[:wind][i]] * b[5,r] +
+                    windallocation[6][r,CLASS[:wind][i]] * b[6,r] +
+                    windallocation[7][r,CLASS[:wind][i]] * b[7,r] +
+                    windallocation[8][r,CLASS[:wind][i]] * b[8,r] +
+                    windallocation[9][r,CLASS[:wind][i]] * b[9,r] +
+                    windallocation[10][r,CLASS[:wind][i]] * b[10,r]
+                    ) * sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+        )
+
+        @constraint(m, SpecialOrderedSet[r in REGION],
+            [b[1,r], b[2,r], b[3,r], b[4,r], b[5,r], b[6,r], b[7,r], b[8,r], b[9,r], b[10,r]] in MathOptInterface.SOS1{Float64}([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
+        )
+
+        @constraint(m, NoSpillover[r in REGION],
+            b[1,r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (threshold * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+        )
+        
+        @constraint(m, Spillover[i in 2:10, r in REGION],
+            b[i,r] => {(Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]) >= 
+                        ((threshold + ε) * (classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]))}
+        )
+    # Wind power capacity is allocated to classes in accordance with was is specified in windallocation
+    elseif historical_allocation == :strict
+        @constraint(m, StrictAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
+            Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
+                windallocation[1][r,CLASS[:wind][i]] * sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+        )
+    else
+        # do nothing, let the model allocate capacity endogenously based on cost
+    end
+
+    @constraints m begin
         ElecCapacity[r in REGION, k in TECH, c in CLASS[k], h in HOUR],
             Electricity[r,k,c,h] <= Capacity[r,k,c] * (k == :csp ? 1 : cf[r,k,c,h]) * hoursperperiod
 
@@ -170,6 +212,9 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
 
         BioLimit[r in REGION],
             sum(AnnualGeneration[r,k] for k in [:bioGT, :bioCCGT]) <= maxbioenergy * sum(demand[r,h] for h in HOUR) * hoursperperiod
+
+        DemandresponseLimit[r in REGION, h in HOUR],
+            Electricity[r,:demandresponse,:_,h] <= maxdemandresponse * demand[r,h] * hoursperperiod
 
         # This does not quite make the variable bound redundant, because e.g. some pixels in PV class 1 are class "0" for CSP,
         # and are therefore unaffected by this constraint. 
@@ -230,7 +275,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
 
     return Constraints(ElecCapacity, ElecDemand, RampingDown, RampingUp, StorageBalance, MaxStorageCapacity, InitialStorageLevel,
                 MaxTransmissionCapacity, TwoWayStreet, NoTransmission, NoCharging, ChargingNeedsBattery,
-                Calculate_AnnualGeneration, Calculate_FuelUse, TotalCO2, Totalcosts, Bogdanov)
+                Calculate_AnnualGeneration, Calculate_FuelUse, TotalCO2, Totalcosts)
 end
 
 function makeobjective(m, sets, vars)

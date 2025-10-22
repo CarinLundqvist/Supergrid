@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "d300a7f5a157105356102eedd61004f86fedc425"
+project_hash = "8d2a3f7021e0684eff026f53b8c0b51c512ebffa"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -880,9 +880,9 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[deps.MathOptInterface]]
 deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "DataStructures", "ForwardDiff", "JSON3", "LinearAlgebra", "MutableArithmetics", "NaNMath", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays", "SpecialFunctions", "Test"]
-git-tree-sha1 = "098fafb5e7eb6ad99b7b2c9464323759183aa0f3"
+git-tree-sha1 = "700acfa97a2b23569c0a6dcfcd85f183d7258e31"
 uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
-version = "1.37.0"
+version = "1.45.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
