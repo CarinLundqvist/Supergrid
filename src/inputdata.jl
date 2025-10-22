@@ -19,15 +19,15 @@ end
 # :NOR,:FRA,:GER,:UK,:MED,:BAL,:SPA,:CEN,:BUK,:TCC,:KZK,:CAS,:RU_C,:RU_SW,:RU_VL,:CH_N,:CH_NE,:CH_E,:CH_SC,:CH_SW,:CH_NW
 
 function makesets(hourinfo, options)
-    @unpack regionset, disableregions, inputdatasuffix = options
+    @unpack regionset, disableregions, windinputdatasuffix, solarinputdatasuffix = options
     inputdata = getdatafolder(options)
     distancevars = matread(joinpath(inputdata, "distances_$regionset.mat"))
     dataregions = Symbol.(vec(distancevars["regionlist"]))
     regionlist = setdiff(dataregions, disableregions)
-    makesets(regionlist, dataregions, hourinfo, inputdatasuffix, options)
+    makesets(regionlist, dataregions, hourinfo, windinputdatasuffix, solarinputdatasuffix, options)
 end
 
-function makesets(REGION, dataregions, hourinfo, inputdatasuffix, options)
+function makesets(REGION, dataregions, hourinfo, windinputdatasuffix, solarinputdatasuffix, options)
     @unpack datayear, regionset = options
     techdata = Dict(
         :name => [:pv,  :pvroof, :csp,     :wind, :offwind, :hydro,    :demandresponse, :coal,    :gasGT,   :gasCCGT, :bioGT,   :bioCCGT, :nuclear, :battery],
@@ -39,10 +39,9 @@ function makesets(REGION, dataregions, hourinfo, inputdatasuffix, options)
     hydrovars = matread(joinpath(inputdata, "GISdata_hydro_$regionset.mat"))
     _, ncostclasses, nreservoirclasses = size(hydrovars["potentialcapac"])
 
-    windvars = matread(joinpath(inputdata, "GISdata_wind$(datayear)_$regionset$inputdatasuffix.mat"))
-    #solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$inputdatasuffix.mat"))
-    # Removed suffices to be able to use the same solar data for different wind-files
-    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset.mat"))
+    # Enabled the use of wind and solar files from GlobalEnergyGIS with different suffices
+    windvars = matread(joinpath(inputdata, "GISdata_wind$(datayear)_$regionset$windinputdatasuffix.mat"))
+    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$solarinputdatasuffix.mat"))
     nwindclasses = length(windvars["CFtime_windonshoreA"][1,1,:])
     noffwindclasses = length(windvars["CFtime_windoffshore"][1,1,:])
     npvclasses = length(solarvars["CFtime_pvplantA"][1,1,:])
@@ -118,7 +117,7 @@ CRF(r,T) = r / (1 - 1/(1+r)^T)
 
 function makeparameters(sets, options, hourinfo)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, dataregions = sets
-    @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, inputdatasuffix, sspscenario, sspyear, 
+    @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, windinputdatasuffix, solarinputdatasuffix, sspscenario, sspyear, 
             realistic_transmissioncapacity, allocation_of_wind  = options
 
     hoursperyear = 24 * Dates.daysinyear(datayear)
@@ -283,10 +282,8 @@ function makeparameters(sets, options, hourinfo)
     emissionsCO2 = AxisArray(zeros(length(FUEL)), FUEL)
     emissionsCO2[[:coal,:gas]] = [0.330, 0.202]     # kgCO2/kWh fuel (or ton/MWh or kton/GWh)
 
-    windvars = matread(joinpath(inputdata, "GISdata_wind$(datayear)_$regionset$inputdatasuffix.mat"))
-    #solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$inputdatasuffix.mat"))
-    # Removed suffices to be able to use the same solar data for different wind-files
-    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset.mat"))
+    windvars = matread(joinpath(inputdata, "GISdata_wind$(datayear)_$regionset$windinputdatasuffix.mat"))
+    solarvars = matread(joinpath(inputdata, "GISdata_solar$(datayear)_$regionset$solarinputdatasuffix.mat"))
 
     allclasses = union(vreCLASS, sets.CLASS[:hydro], [:_])
     classlimits = AxisArray(zeros(numregions,5,nclasses), REGION, [:wind, :offwind, :pv, :pvroof, :csp], vreCLASS)
