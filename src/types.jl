@@ -76,7 +76,6 @@ struct Constraints
     Calculate_FuelUse
     TotalCO2
     Totalcosts
-    #Bogdanov
 end
 
 struct HourSampling

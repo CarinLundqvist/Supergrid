@@ -47,7 +47,7 @@ function makevariables(m, sets)
         TransmissionCapacity[r1 in REGION, r2 in REGION] >= 0                           # GW elec
         Capacity[r in REGION, k in TECH, c in CLASS[k]] >= 0                            # GW elec
         SolarCapacity[r in REGION, k in [:pv, :csp], pv in CLASS[:pv], csp in CLASS[:csp]] >= 0     # GW elec
-        b[1:10, r in REGION], Bin  # binary variables for Bogdanov constraint 
+        b[1:10, r in REGION], Bin  # binary variables for spillover when using overflow allocation constraint
     end #variables
 
     return Vars(Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
@@ -109,7 +109,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
             Transmission, TransmissionCapacity, Capacity, SolarCapacity, 
             b = vars
     @unpack hoursperperiod = hourinfo
-    @unpack carbontax, carboncap, rampingconstraints, maxbioenergy, globalnuclearlimit, historical_allocation = options
+    @unpack carbontax, carboncap, rampingconstraints, maxbioenergy, maxdemandresponse, globalnuclearlimit, historical_allocation = options
 
     storagetechs = [k for k in TECH if techtype[k] == :storage]
 
@@ -117,6 +117,8 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
     ε = 1e-5  # small number to avoid numerical issues
     bracketnumber = [10,9,8,7,6,5,4,3,2]
 
+    # If encountering resource constraints, the model gradually relax the wind power allocations
+    # by using a spill-and-fill approach where capacity is redirected to lower classes. 
     if historical_allocation == :overflow
         @constraint(m, OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
                 Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
@@ -145,6 +147,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
             b[i,r] => {(Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]) >= 
                         ((threshold + ε) * (classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]))}
         )
+    # Wind power capacity is allocated to classes in accordance with was is specified in windallocation
     elseif historical_allocation == :strict
         @constraint(m, StrictAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
             Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
@@ -209,6 +212,9 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
 
         BioLimit[r in REGION],
             sum(AnnualGeneration[r,k] for k in [:bioGT, :bioCCGT]) <= maxbioenergy * sum(demand[r,h] for h in HOUR) * hoursperperiod
+
+        DemandresponseLimit[r in REGION, h in HOUR],
+            Electricity[r,:demandresponse,:_,h] <= maxdemandresponse * demand[r,h] * hoursperperiod
 
         # This does not quite make the variable bound redundant, because e.g. some pixels in PV class 1 are class "0" for CSP,
         # and are therefore unaffected by this constraint. 

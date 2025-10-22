@@ -30,9 +30,9 @@ end
 function makesets(REGION, dataregions, hourinfo, inputdatasuffix, options)
     @unpack datayear, regionset = options
     techdata = Dict(
-        :name => [:pv,  :pvroof, :csp,     :wind, :offwind, :hydro,    :coal,    :gasGT,   :gasCCGT, :bioGT,   :bioCCGT, :nuclear, :battery],
-        :type => [:vre, :vre,    :storage, :vre,  :vre,     :storage,  :thermal, :thermal, :thermal, :thermal, :thermal, :thermal, :storage],
-        :fuel => [:_,   :_,      :_,       :_,    :_,       :_,        :coal,    :gas,     :gas,     :biogas,  :biogas,  :uranium, :_]
+        :name => [:pv,  :pvroof, :csp,     :wind, :offwind, :hydro,    :demandresponse, :coal,    :gasGT,   :gasCCGT, :bioGT,   :bioCCGT, :nuclear, :battery],
+        :type => [:vre, :vre,    :storage, :vre,  :vre,     :storage,  :thermal,        :thermal, :thermal, :thermal, :thermal, :thermal, :thermal, :storage],
+        :fuel => [:_,   :_,      :_,       :_,    :_,       :_,        :_,              :coal,    :gas,     :gas,     :biogas,  :biogas,  :uranium, :_]
     )
 
     inputdata = getdatafolder(options)
@@ -234,6 +234,7 @@ function makeparameters(sets, options, hourinfo)
 
     # Efficiencies for storage technologies are round trip efficiencies.
     # CSP costs are adjusted for solar field size and storage capacity further below.
+    # Demand response taken from Kan et al 2025, http://dx.doi.org/10.1016/j.rser.2024.115272
     techtable = [
         #               investcost  variablecost    fixedcost   lifetime    efficiency  rampingrate
         #               €/kW        €/MWh elec      €/kW/year   years                   share of capacity per hour
@@ -242,6 +243,7 @@ function makeparameters(sets, options, hourinfo)
         :coal           1600        2               48          40          0.45        0.15
         :bioGT          500         1               10          30          0.35        1
         :bioCCGT        800         1               16          30          0.6         0.3
+        :demandresponse 0           1000            0           100         1           1
         :nuclear        5000        3.5             112         40          0.33        0.05
         :wind           825         0               33          25          1           1
         :offwind        1500        0               55          25          1           1
@@ -316,8 +318,7 @@ function makeparameters(sets, options, hourinfo)
     classlimits[:,:pv,(bclasses+1):(bclasses+npvclasses)] = solarvars["capacity_pvplantB"][activeregions,:] * solarwindarea
     classlimits[:,:csp,(bclasses+1):(bclasses+ncspclasses)] = solarvars["capacity_cspplantB"][activeregions,:] * solarwindarea
 
-    #Assuming that it is pv first and then csp. This might be completely wrong
-    #### OBS! MIGHT NEED TO CHANGE THIS TOO
+    #Assuming that it is pv first and then csp. Might be wrong but doesn't matter as long as csp and pv have the same number of classes
     solarcombinedarea[:,1:npvclasses,1:ncspclasses] = solarvars["solar_overlap_areaA"][activeregions,:,:] * solarwindarea
     solarcombinedarea[:,(npvclasses+1):(2*npvclasses),(ncspclasses+1):(2*ncspclasses)] = solarvars["solar_overlap_areaB"][activeregions,:,:] * solarwindarea
     pv_density = solarvars["pv_density"]
