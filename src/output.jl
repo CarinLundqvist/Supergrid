@@ -198,7 +198,7 @@ function analyzeresults(results)
         regdischarge = regelec[:, findfirst(displaytechs .== :battery)]
         regdemand = sumdimdrop(demand[regs,:], dims=1)
 
-        composite = plot(; layout=grid(2,3,widths=[.4,.2,.4,.4,.2,.4]), size=(1850,950),    
+        composite = plot(; layout=grid(2,3,widths=[.2,.1,.2,.2,.1,.2]), size=(1850,950),    
                         legend=false, tickfont=16, titlefont=20, optionlist...)
         for (i,k) in enumerate([:wind, :offwind, :hydro, :pv, :pvroof, :csp])
             colors = [palette[findfirst(displaytechs .== k)]; RGB(0.9,0.9,0.9)]
