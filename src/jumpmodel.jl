@@ -126,19 +126,22 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
         SpecialOrderedSet[r in REGION],
             [b[1,r], b[2,r], b[3,r], b[4,r], b[5,r], b[6,r], b[7,r], b[8,r], b[9,r], b[10,r]] in MathOptInterface.SOS1{Float64}([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
 
+        OneActiveAllocation[r in REGION],
+            sum(b[j,r] for j in 1:10) == 1
+
         OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2), j in 1:10],
             b[j,r] => {
                 Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                    windallocation[j][r,CLASS[:wind][i]]  * TotalWindCapacity[r]
+                    windallocation[11-j][r,CLASS[:wind][i]]  * TotalWindCapacity[r]
             }
 
         NoSpillover[r in REGION],
-            b[1,r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (threshold * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+            b[10,r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (threshold * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
         
-        Spillover[i in 2:10, r in REGION],
-            b[i,r] => {
-                (Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]) >= 
-                        ((threshold + ε) * (classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]))
+        Spillover[i in bracketnumber, r in REGION],
+            b[i-1,r] => {
+                (Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][i+10]]) >= 
+                        ((threshold + ε) * (classlimits[r,:wind,CLASS[:wind][i]] + classlimits[r,:wind,CLASS[:wind][i+10]]))
             }
         end # constraints
     # Wind power capacity is allocated to classes in accordance with was is specified in windallocation

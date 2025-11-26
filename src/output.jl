@@ -10,7 +10,7 @@ getdict(saa::JuMP.Containers.SparseAxisArray) = saa.data
 
 function readresults(model::ModelInfo, status::MOI.TerminationStatusCode)
     @unpack REGION, TECH, CLASS, HOUR, techtype, STORAGECLASS = model.sets
-    @unpack Systemcost, CO2emissions, FuelUse, Electricity, Charging, StorageLevel, Transmission, TransmissionCapacity, Capacity = model.vars
+    @unpack Systemcost, CO2emissions, FuelUse, Electricity, Charging, StorageLevel, Transmission, TransmissionCapacity, Capacity, b = model.vars
     @unpack demand, classlimits, hydrocapacity = model.params
     storagetechs = [k for k in TECH if techtype[k] == :storage]
 
@@ -27,8 +27,11 @@ function readresults(model::ModelInfo, status::MOI.TerminationStatusCode)
     transmission = AxisArray(JuMP.value.(Transmission))
     transmissioncapac = AxisArray(JuMP.value.(TransmissionCapacity))
     capac = getdict(JuMP.value.(Capacity))
+    binary = AxisArray(JuMP.value.(b))
 
-    return (Status = status, options=model.options, hourinfo=model.hourinfo, sets=model.sets, params=params, Systemcost=cost, CO2emissions=emis, FuelUse=fuel, Electricity=elec, Charging=charge, StorageLevel=storage, Transmission=transmission, TransmissionCapacity=transmissioncapac, Capacity=capac)
+    return (Status = status, options=model.options, hourinfo=model.hourinfo, sets=model.sets, params=params, 
+            Systemcost=cost, CO2emissions=emis, FuelUse=fuel, Electricity=elec, Charging=charge, StorageLevel=storage, 
+            Transmission=transmission, TransmissionCapacity=transmissioncapac, Capacity=capac, DegreeOfOverflow = binary)
     #return Results(status, model.options, model.hourinfo, model.sets, params, cost, emis, fuel, elec, charge, storage, transmission, transmissioncapac, capac)
 end
 
