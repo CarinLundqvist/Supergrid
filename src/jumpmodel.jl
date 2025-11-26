@@ -16,7 +16,7 @@ function initjumpmodel(options)
         #m = Model(solver=GurobiSolver(Method=2, Threads=threads, BarConvTol=1.5e-8, Crossover=0)) 
         m = Model(Gurobi.Optimizer)
         set_optimizer_attributes(m, 
-                                "Method" => 1, 
+                                "Method" => 2, 
                                 "Threads" => threads, 
                                 "BarConvTol" => 1.5e-8, 
                                 "Crossover" => 0)
@@ -52,7 +52,7 @@ function makevariables(m, sets)
     end #variables
 
     return Vars(Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
-                    Transmission, TransmissionCapacity, Capacity, SolarCapacity, b)
+                    Transmission, TransmissionCapacity, Capacity, SolarCapacity, TotalWindCapacity, b)
 end
 
 function setbounds(sets, params, vars, options)
@@ -107,7 +107,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
             transmissioninvestcost, transmissionfixedcost, hydroeleccost, solarcombinedarea, pv_density, csp_density, cspsolarmultiple,
             windallocation, classlimits = params
     @unpack Systemcost, CO2emissions, FuelUse, Electricity, AnnualGeneration, Charging, StorageLevel,
-            Transmission, TransmissionCapacity, Capacity, SolarCapacity, 
+            Transmission, TransmissionCapacity, Capacity, SolarCapacity, TotalWindCapacity,
             b = vars
     @unpack hoursperperiod = hourinfo
     @unpack carbontax, carboncap, rampingconstraints, maxbioenergy, maxdemandresponse, globalnuclearlimit, historical_allocation = options
