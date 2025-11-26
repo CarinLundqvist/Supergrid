@@ -55,6 +55,7 @@ struct Vars
     TransmissionCapacity        ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
     Capacity                    ::JuMP.Containers.SparseAxisArray{JuMP.VariableRef,3}
     SolarCapacity               ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,4}
+    TotalWindCapacity           ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,1}
     b                           ::JuMP.Containers.DenseAxisArray{JuMP.VariableRef,2}
 end
 

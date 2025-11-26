@@ -16,7 +16,7 @@ function initjumpmodel(options)
         #m = Model(solver=GurobiSolver(Method=2, Threads=threads, BarConvTol=1.5e-8, Crossover=0)) 
         m = Model(Gurobi.Optimizer)
         set_optimizer_attributes(m, 
-                                "Method" => 2, 
+                                "Method" => 1, 
                                 "Threads" => threads, 
                                 "BarConvTol" => 1.5e-8, 
                                 "Crossover" => 0)
@@ -47,6 +47,7 @@ function makevariables(m, sets)
         TransmissionCapacity[r1 in REGION, r2 in REGION] >= 0                           # GW elec
         Capacity[r in REGION, k in TECH, c in CLASS[k]] >= 0                            # GW elec
         SolarCapacity[r in REGION, k in [:pv, :csp], pv in CLASS[:pv], csp in CLASS[:csp]] >= 0     # GW elec
+        TotalWindCapacity[r in REGION] >= 0                                             # GW elec, only applies to onshore wind
         b[1:10, r in REGION], Bin  # binary variables for spillover when using overflow allocation constraint
     end #variables
 
@@ -120,44 +121,40 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
     # If encountering resource constraints, the model gradually relax the wind power allocations
     # by using a spill-and-fill approach where capacity is redirected to lower classes. 
     if historical_allocation == :overflow
-        @constraint(m, OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
-                Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                    (windallocation[1][r,CLASS[:wind][i]] * b[1,r] +
-                    windallocation[2][r,CLASS[:wind][i]] * b[2,r] +
-                    windallocation[3][r,CLASS[:wind][i]] * b[3,r] +
-                    windallocation[4][r,CLASS[:wind][i]] * b[4,r] +
-                    windallocation[5][r,CLASS[:wind][i]] * b[5,r] +
-                    windallocation[6][r,CLASS[:wind][i]] * b[6,r] +
-                    windallocation[7][r,CLASS[:wind][i]] * b[7,r] +
-                    windallocation[8][r,CLASS[:wind][i]] * b[8,r] +
-                    windallocation[9][r,CLASS[:wind][i]] * b[9,r] +
-                    windallocation[10][r,CLASS[:wind][i]] * b[10,r]
-                    ) * sum(Capacity[r,:wind,class] for class in CLASS[:wind])
-        )
-
-        @constraint(m, SpecialOrderedSet[r in REGION],
+        @constraints m begin
+        # One active allocation per region
+        SpecialOrderedSet[r in REGION],
             [b[1,r], b[2,r], b[3,r], b[4,r], b[5,r], b[6,r], b[7,r], b[8,r], b[9,r], b[10,r]] in MathOptInterface.SOS1{Float64}([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
-        )
 
-        @constraint(m, NoSpillover[r in REGION],
+        OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2), j in 1:10],
+            b[j,r] => {
+                Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
+                    windallocation[j][r,CLASS[:wind][i]]  * TotalWindCapacity[r]
+            }
+
+        NoSpillover[r in REGION],
             b[1,r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (threshold * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
-        )
         
-        @constraint(m, Spillover[i in 2:10, r in REGION],
-            b[i,r] => {(Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]) >= 
-                        ((threshold + ε) * (classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]))}
-        )
+        Spillover[i in 2:10, r in REGION],
+            b[i,r] => {
+                (Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + Capacity[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]) >= 
+                        ((threshold + ε) * (classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]]] + classlimits[r,:wind,CLASS[:wind][bracketnumber[i-1]+10]]))
+            }
+        end # constraints
     # Wind power capacity is allocated to classes in accordance with was is specified in windallocation
     elseif historical_allocation == :strict
         @constraint(m, StrictAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
             Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                windallocation[1][r,CLASS[:wind][i]] * sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+                windallocation[1][r,CLASS[:wind][i]] * TotalWindCapacity[r]
         )
     else
         # do nothing, let the model allocate capacity endogenously based on cost
     end
 
     @constraints m begin
+        OnshoreWindCapacity[r in REGION],
+            TotalWindCapacity[r] == sum(Capacity[r,:wind,class] for class in CLASS[:wind])
+
         ElecCapacity[r in REGION, k in TECH, c in CLASS[k], h in HOUR],
             Electricity[r,k,c,h] <= Capacity[r,k,c] * (k == :csp ? 1 : cf[r,k,c,h]) * hoursperperiod
 
