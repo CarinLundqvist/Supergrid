@@ -39,7 +39,7 @@ struct Params
     pv_density                  ::Float64
     csp_density                 ::Float64
     cspsolarmultiple            ::Float64
-    windallocation              ::Vector{AxisArrays.AxisMatrix{Float64, Matrix{Float64}, Tuple{AxisArrays.Axis{:row, Vector{Symbol}}, AxisArrays.Axis{:col, Vector{Symbol}}}}}
+    windallocation              ::AxisArray{Float64,3}
     transmissionlimits          ::AxisArray{Float64,2}
 end
 

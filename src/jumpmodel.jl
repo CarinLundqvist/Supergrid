@@ -129,6 +129,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
         OneActiveAllocation[r in REGION],
             sum(b[j,r] for j in 1:10) == 1
 
+        # Here is the problem
         OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2), j in 1:10],
             b[j,r] => {
                 Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
@@ -136,7 +137,9 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
             }
 
         NoSpillover[r in REGION],
-            b[10,r] => {(Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= (threshold * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
+            b[10,r] => {
+                (Capacity[r,:wind,CLASS[:wind][10]] + Capacity[r,:wind,CLASS[:wind][20]]) <= 
+                        (threshold * (classlimits[r,:wind,CLASS[:wind][10]] + classlimits[r,:wind,CLASS[:wind][20]]))}
         
         Spillover[i in bracketnumber, r in REGION],
             b[i-1,r] => {
@@ -148,7 +151,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
     elseif historical_allocation == :strict
         @constraint(m, StrictAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2)],
             Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                windallocation[1][r,CLASS[:wind][i]] * TotalWindCapacity[r]
+                windallocation[r,CLASS[:wind][i],1] * TotalWindCapacity[r]
         )
     else
         # do nothing, let the model allocate capacity endogenously based on cost

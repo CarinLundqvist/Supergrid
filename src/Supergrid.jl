@@ -18,6 +18,7 @@ defaultoptions() = Dict(
     :regionset => :Europe8,             # :Eurasia21, :Europe8
     :windinputdatasuffix => "",         # e.g. "_landx2" to read wind input data "GISdata_wind2018_Europe8_landx2.mat"
     :solarinputdatasuffix => "",         # e.g. "_landx2" to read solar input data "GISdata_solar2018_Europe8_landx2.mat"
+    :allocationinputdatasuffix => "",   # Only relevant if you have historical_allocation != :none and allocation_of_wind = []
     :runname => "",                     # change the run name without changing run parameters (e.g. if you modify the code)
     :islandindexes => [],               # superregion groupings, defaults to [1:8, 9:15, 16:21] for eurasia21, [] for europe8
     :carbontax => 0.0,                  # €/ton CO2
@@ -46,17 +47,7 @@ defaultoptions() = Dict(
     :datafolder => "",                  # Full path to GIS input data. Set to "" to use the folder in HOMEDIR/.GlobalEnergyGIS_config.
     :resultsfile => "results.jld2",     # use "" to skip saving the results in the database
     :historical_allocation => :none,    # If you want to manually allocate wind capacity according to historical allocation. Alternatives: :none, :strict, :overflow
-    :allocation_of_wind => [[10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10],
-                            [10,10,10,10,10,10,10,10,10,10]
-                            ],
+    :allocation_of_wind => [],
     :realistic_transmissioncapacity => false    # Allows the use of realistic transmission connections between subregions. See function getTransmissionLimits in inputdata.jl
 )
 

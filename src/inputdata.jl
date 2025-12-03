@@ -117,8 +117,8 @@ CRF(r,T) = r / (1 - 1/(1+r)^T)
 
 function makeparameters(sets, options, hourinfo)
     @unpack REGION, FUEL, TECH, CLASS, HOUR, dataregions = sets
-    @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, windinputdatasuffix, solarinputdatasuffix, sspscenario, sspyear, 
-            realistic_transmissioncapacity, allocation_of_wind  = options
+    @unpack discountrate, datayear, regionset, solarwindarea, islandindexes, windinputdatasuffix, solarinputdatasuffix, allocationinputdatasuffix,
+            sspscenario, sspyear, historical_allocation, allocation_of_wind, realistic_transmissioncapacity  = options
 
     hoursperyear = 24 * Dates.daysinyear(datayear)
     hoursperperiod = Int(hourinfo.hoursperperiod)
@@ -353,9 +353,20 @@ function makeparameters(sets, options, hourinfo)
     #   display(plot(qq./maximum(qq,dims=1), size=(1850,950)))
     # end
 
-    allocation = allocation_of_wind .* 0.1
+    if historical_allocation == :overflow
+        windallocation = AxisArray(zeros(numregions, nwindclasses, 10), REGION, CLASS[:wind][1:nwindclasses], 1:10)
+    else
+        windallocation = AxisArray(zeros(numregions, nwindclasses, 1), REGION, CLASS[:wind][1:nwindclasses], [:o1])
+    end
 
-    windallocation = [AxisArray(vcat(a,a)' .* ones(numregions,length(CLASS[:wind])), REGION, CLASS[:wind]) for a in allocation]
+    if isempty(allocation_of_wind)
+        allocation = matread(joinpath(inputdata, "OverflowAllocation_$regionset$windinputdatasuffix$allocationinputdatasuffix.mat"))
+        windallocation[:,1:nwindclasses,:o1] = allocation["OverflowAllocation"][activeregions,:] .* 0.1
+    else
+        allocation = allocation_of_wind .* 0.1
+        windallocation[:,1:nwindclasses,:o1] = allocation
+    end
+    println(windallocation)
 
     transmissionlimits = getTransmissionLimits(regionset)
 
