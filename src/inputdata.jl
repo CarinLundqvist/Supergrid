@@ -354,19 +354,24 @@ function makeparameters(sets, options, hourinfo)
     # end
 
     if historical_allocation == :overflow
+        # If overflow, only accepts inputs in the shape of
         windallocation = AxisArray(zeros(numregions, nwindclasses, 10), REGION, CLASS[:wind][1:nwindclasses], 1:10)
-    else
-        windallocation = AxisArray(zeros(numregions, nwindclasses, 1), REGION, CLASS[:wind][1:nwindclasses], [:o1])
-    end
-
-    if isempty(allocation_of_wind)
-        allocation = matread(joinpath(inputdata, "OverflowAllocation_$regionset$windinputdatasuffix$allocationinputdatasuffix.mat"))
-        windallocation[:,1:nwindclasses,:o1] = allocation["OverflowAllocation"][activeregions,:] .* 0.1
-    else
         allocation = allocation_of_wind .* 0.1
-        windallocation[:,1:nwindclasses,:o1] = allocation
+        for reg in REGION
+            windallocation[reg,:,:] = allocation
+        end
+    else
+        windallocation = AxisArray(zeros(numregions, nwindclasses, 1), REGION, CLASS[:wind][1:nwindclasses], [1])
+        if isempty(allocation_of_wind)
+            # Read from file
+            allocation = matread(joinpath(inputdata, "OverflowAllocation_$regionset$windinputdatasuffix$allocationinputdatasuffix.mat"))
+            windallocation[:,1:nwindclasses,1] = allocation["OverflowAllocation"][activeregions,:] .* 0.1
+        else
+            # Use the input given in allocation_of_wind
+            allocation = allocation_of_wind .* 0.1
+            windallocation[:,1:nwindclasses,1] = allocation
+        end
     end
-    println(windallocation)
 
     transmissionlimits = getTransmissionLimits(regionset)
 

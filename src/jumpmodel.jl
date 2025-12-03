@@ -133,7 +133,7 @@ function makeconstraints(m, sets, params, vars, hourinfo, options)
         OverflowAllocation[r in REGION, i in 1:Int(length(CLASS[:wind])/2), j in 1:10],
             b[j,r] => {
                 Capacity[r,:wind,CLASS[:wind][i]] + Capacity[r,:wind,CLASS[:wind][10+i]] <= 
-                    windallocation[11-j][r,CLASS[:wind][i]]  * TotalWindCapacity[r]
+                    windallocation[r,CLASS[:wind][i],11-j]  * TotalWindCapacity[r]
             }
 
         NoSpillover[r in REGION],
