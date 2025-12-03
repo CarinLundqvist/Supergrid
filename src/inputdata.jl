@@ -369,12 +369,16 @@ function makeparameters(sets, options, hourinfo)
         else
             # Use the input given in allocation_of_wind
             allocation = allocation_of_wind .* 0.1
-            windallocation[:,1:nwindclasses,1] = allocation
+            for reg in REGION
+                windallocation[reg,1:nwindclasses,1] = allocation
+            end
         end
     else
         windallocation = AxisArray(zeros(numregions, nwindclasses, 1), REGION, CLASS[:wind][1:nwindclasses], [1])
         allocation = [10 10 10 10 10 10 10 10 10 10] .* 0.1
-        windallocation[:,1:nwindclasses,1] = allocation
+        for reg in REGION
+            windallocation[reg,1:nwindclasses,1] = allocation
+        end
     end
 
     transmissionlimits = getTransmissionLimits(regionset)
