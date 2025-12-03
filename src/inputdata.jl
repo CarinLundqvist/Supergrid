@@ -354,7 +354,7 @@ function makeparameters(sets, options, hourinfo)
     # end
 
     if historical_allocation == :overflow
-        # If overflow, only accepts inputs in the shape of
+        # If overflow a non-empty allocation_of_wind must be entered
         windallocation = AxisArray(zeros(numregions, nwindclasses, 10), REGION, CLASS[:wind][1:nwindclasses], 1:10)
         allocation = allocation_of_wind .* 0.1
         for reg in REGION
