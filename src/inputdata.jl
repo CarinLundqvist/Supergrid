@@ -360,7 +360,7 @@ function makeparameters(sets, options, hourinfo)
         for reg in REGION
             windallocation[reg,:,:] = allocation
         end
-    else
+    elseif historical_allocation == :strict
         windallocation = AxisArray(zeros(numregions, nwindclasses, 1), REGION, CLASS[:wind][1:nwindclasses], [1])
         if isempty(allocation_of_wind)
             # Read from file
@@ -371,6 +371,10 @@ function makeparameters(sets, options, hourinfo)
             allocation = allocation_of_wind .* 0.1
             windallocation[:,1:nwindclasses,1] = allocation
         end
+    else
+        windallocation = AxisArray(zeros(numregions, nwindclasses, 1), REGION, CLASS[:wind][1:nwindclasses], [1])
+        allocation = [10 10 10 10 10 10 10 10 10 10] .* 0.1
+        windallocation[:,1:nwindclasses,1] = allocation
     end
 
     transmissionlimits = getTransmissionLimits(regionset)
