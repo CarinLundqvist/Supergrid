@@ -507,6 +507,12 @@ function getTransmissionLimits(regionset)
                                 5  2.6   15    0   50   33.1;
                                 0   0   45.6  50    0   3.6;
                                3.6  0   43.5 33.1  3.6   0]
+    elseif regionset == "Transmission_Sweden"
+        REGION = [:SE1, :SE2, :SE3, :SE4]
+        transmissionmatrix = [ 0  3.3  0   0;
+                              3.3  0  7.3  0;
+                               0  7.3  0  5.6;
+                               0   0  2.8  0]
     else
         REGION = [:NoRegion]
         transmissionmatrix = zeros(length(REGION),length(REGION))
