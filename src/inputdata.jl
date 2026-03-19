@@ -216,12 +216,12 @@ function makeparameters(sets, options, hourinfo)
         connected[indexGER,indexCHSC] = connected[indexCHSC,indexGER] = true
     end
 
-    # from Bogdanov & Breyer (2016) "North-East Asian Super Grid..."
-    transmissioncostdata = connected .* (180 .+ 0.4*distances) .+ connectedoffshore .* (180 .+ 0.47*distances)
-    transmissionfixedcostdata = connected .* (1.8 .+ 0.008*distances) .+ connectedoffshore .* (1.8 .+ 0.00165*distances)
+    # Cost from Kan et al 2025, http://dx.doi.org/10.1016/j.rser.2024.115272
+    transmissioncostdata = connected .* (150 .+ 0.4*distances) .+ connectedoffshore .* (150 .+ 0.47*distances)
+    transmissionfixedcostdata = connected .* (3.6 .+ 0.008*distances) .+ connectedoffshore .* (3.6 .+ 0.00165*distances)
     transmissioninvestcost = AxisArray(transmissioncostdata, REGION, REGION)        # €/kW
     transmissionfixedcost = AxisArray(transmissionfixedcostdata, REGION, REGION)        # €/kW
-    transmissionlossdata = (connected .| connectedoffshore) .* (0.014 .+ 0.016*distances/1000)
+    transmissionlossdata = (connected .| connectedoffshore) .* (0.014 .+ 0.035*distances/1000)
     transmissionlosses = AxisArray(transmissionlossdata, REGION, REGION)
     smalltransmissionpenalty = 0.1      # €/MWh elec
 
@@ -233,7 +233,7 @@ function makeparameters(sets, options, hourinfo)
 
     # Efficiencies for storage technologies are round trip efficiencies.
     # CSP costs are adjusted for solar field size and storage capacity further below.
-    # Demand response taken from Kan et al 2025, http://dx.doi.org/10.1016/j.rser.2024.115272
+    # Cost are updated based on Kan et al 2025, http://dx.doi.org/10.1016/j.rser.2024.115272
     techtable = [
         #               investcost  variablecost    fixedcost   lifetime    efficiency  rampingrate
         #               €/kW        €/MWh elec      €/kW/year   years                   share of capacity per hour
@@ -246,7 +246,7 @@ function makeparameters(sets, options, hourinfo)
         :nuclear        5000        3.5             112         40          0.33        0.05
         :wind           825         0               33          25          1           1
         :offwind        1500        0               55          25          1           1
-        :transmission   NaN         0               NaN         50          NaN         1
+        :transmission   NaN         0               NaN         40          NaN         1
         :battery        116         0               1.5         15          0.85        1   # 1h discharge time, 150 €/kW = 150 €/kWh
         :pv             323         0               8           25          1           1
         :pvroof         423         0               5.8         25          1           1
