@@ -1,21 +1,15 @@
 # Changes
-*OUTDATED*
+Below are the instructions for the original Supergrid-model by Niclas Mattsson. In this section, I will explain the additions.
 
-Below are the instructions for the original Supergrid-model by Niclas Mattsson. In this section, I will explain the changes that have been made.
+The model was run with Julia v.1.10.2 and Gurobi 12.0.0.
 
-The code was run with Julia v.1.3.1 and Gurobi 9.0.0. This was the only combination of Julia and a solver I could get working with the model.
+Besides updates allowing the model to run on new versions of Julia, the main addition to the model is the implementation of a siting heuristic for onshore wind power. Instead of siting wind power cost-optimally given the CF time series and wind power potential, the model can allocate wind power to sites in accordance to a distribution specified in an input file.
 
-The main addition to the model is the implementation of a constraint that places the installed wind capacity in accordance with a heuristic instead of simply using the best sites:
+For instance, if the input files for Norway contains [0 0 0 0 0 0 0 0 1 9], 90% of capacity has to be allocated to the windiest resource class and 10% to the second windiest resource class. Resource classes are created by partitioning sites with average wind speeds above 6 m/s into 10 categories, from least windy to windiest, such that each category/class corresponds to the same area.
 
-C_r,k,c <= s_r,c * sum(C_r,k,c over c)
+For details on its implementation see the master thesis "How the Cost-Competitiveness of Wind Power is Affected by Considering Historical Installation Patterns" by Lundqvist (2024), url: http://hdl.handle.net/20.500.12380/307930, as well as the paper "Empirically based assumptions for wind power - Consequences for modeling low-carbon energy futures" by Carin Lundqvist, Xiaoming Kan and Fredrik Hedenus.
 
-C_r,k,c is the installed capacity for region r, energy technology k and resource class c and s_r,c is the chosen allocation.
-
-You use the constraint by running runmodel(historical_allocation = true, allocation_of_wind = [0,0,0,0,0,0,0,5,4,1]).
-The allocation used here means that 10 % of installations end up in the windiest areas, 40 % in the second windiest and 10 % in the third windiest.
-
-Besides the allocation, the code has been updated such that it can handle any number of resource classes as inputs, while it previously could only handle five.
-Furthermore, the costs have been updated in accordance with the coming article "Assessing the One Sun One World One Grid plan: Could global smoothing of solar power production be cost-effective?" by Xiaoming Kan, Fredrik Hedenus and Lina Reichenberg.
+Costs have been updated in accordance with "Chasing the eternal sun: Does a global super grid favor the deployment of solar power?" by Xiaoming Kan, Fredrik Hedenus and Lina Reichenberg, doi:10.1016/j.rser.2024.115272.
 
 # Supergrid.jl
 
